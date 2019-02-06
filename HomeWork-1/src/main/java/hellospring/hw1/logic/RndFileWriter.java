@@ -6,6 +6,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,15 +15,29 @@ import java.nio.file.Paths;
 @Component
 public class RndFileWriter {
     private static final String OUTPUT_FILE_NAME = "rnd.txt";
-    private static Path fullOutputFileName;
+
+    private PrintWriter writer;
 
     @PostConstruct
     public void init() {
-        fullOutputFileName = Paths.get(System.getProperty("java.io.tmpdir"), OUTPUT_FILE_NAME);
+        Path fullOutputFileName = Paths.get(System.getProperty("java.io.tmpdir"), OUTPUT_FILE_NAME);
         System.out.println(String.format("%s will print the output to file: %s",
                 this.getClass().getSimpleName(), fullOutputFileName));
 
-        deleteIfExists(fullOutputFileName);
+        try {
+            System.out.println("Opening file...");
+            writer = new PrintWriter(new FileWriter(fullOutputFileName.toString(), false));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @PreDestroy
+    public void destroy() {
+        if (writer != null) {
+            System.out.println("Closing file...");
+            writer.close();
+        }
     }
 
     @EventListener
@@ -32,22 +47,6 @@ public class RndFileWriter {
     }
 
     private void appendFile(String message) {
-        try(PrintWriter writer = new PrintWriter(new FileWriter(fullOutputFileName.toString(), true))) {
-            writer.println(message);
-        }
-        catch(IOException e) {
-            System.err.println(e);
-        }
-    }
-
-    private void deleteIfExists(Path fullFileNamePath) {
-        if (Files.exists(fullFileNamePath)) {
-            try {
-                Files.delete(fullFileNamePath);
-            }
-            catch(IOException e) {
-                System.err.println(e);
-            }
-        }
+        writer.println(message);
     }
 }

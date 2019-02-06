@@ -30,6 +30,10 @@ public class RndFileWriter {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        if (writer == null) {
+            System.err.println("Failed to create output file");
+        }
     }
 
     @PreDestroy
@@ -47,6 +51,8 @@ public class RndFileWriter {
     }
 
     private void appendFile(String message) {
-        writer.println(message);
+        if (writer != null) {
+            writer.println(message);
+        }
     }
 }
